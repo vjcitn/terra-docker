@@ -103,11 +103,32 @@ cp /etc/rstudio/rserver.conf /etc/rstudio/disable_auth_rserver.conf
 echo "auth-none=1" >>/etc/rstudio/disable_auth_rserver.conf
 
 ## Set up RStudio init scripts
+## mkdir -p /etc/services.d/rstudio
+## cat <<"EOF" >/etc/services.d/rstudio/run
+## #!/usr/bin/with-contenv bash
+## ## load /etc/environment vars first:
+## for line in $( cat /etc/environment ) ; do export $line > /dev/null; done
+## ## Write www-root-path dynamically using Terra-injected variables.
+## ## These files are readable here (before 01_set_env does chmod 600).
+## ## On non-Terra systems the files won't exist and the block is skipped.
+## WS_NS=$(cat /var/run/s6/container_environment/WORKSPACE_NAMESPACE 2>/dev/null)
+## RT_NAME=$(cat /var/run/s6/container_environment/RUNTIME_NAME 2>/dev/null)
+## if [ -n "$WS_NS" ] && [ -n "$RT_NAME" ]; then
+##     sed -i '/^www-root-path=/d' /etc/rstudio/rserver.conf
+##     echo "www-root-path=/proxy/${WS_NS}/${RT_NAME}/rstudio/" >> /etc/rstudio/rserver.conf
+## fi
+## exec /usr/lib/rstudio-server/bin/rserver --server-daemonize 0
+## EOF
+
+
 mkdir -p /etc/services.d/rstudio
+
 cat <<"EOF" >/etc/services.d/rstudio/run
 #!/usr/bin/with-contenv bash
 ## load /etc/environment vars first:
 for line in $( cat /etc/environment ) ; do export $line > /dev/null; done
+WS_NS=$(cat /var/run/s6/container_environment/WORKSPACE_NAMESPACE 2>/dev/null)
+RT_NAME=$(cat /var/run/s6/container_environment/RUNTIME_NAME 2>/dev/null)
 exec /usr/lib/rstudio-server/bin/rserver --server-daemonize 0
 EOF
 
@@ -123,7 +144,7 @@ if [ -n "$CUDA_HOME" ]; then
     echo "rsession-ld-library-path=$LD_LIBRARY_PATH" >>/etc/rstudio/rserver.conf
 fi
 
-# Log to stderr
+# Log to syslog
 cat <<EOF >/etc/rstudio/logging.conf
 [*]
 log-level=warn
@@ -132,6 +153,7 @@ EOF
 
 # set up default user
 /rocker_scripts/default_user.sh "${DEFAULT_USER}"
+echo "rstudio ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # install user config initiation script
 cp /rocker_scripts/init_set_env.sh /etc/cont-init.d/01_set_env
@@ -146,5 +168,4 @@ echo -e "Check the RStudio Server version...\n"
 rstudio-server version
 
 echo -e "\nInstall RStudio Server, done!"
-
 

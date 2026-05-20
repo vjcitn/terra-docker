@@ -1,5 +1,5 @@
 # check=skip=SecretsUsedInArgOrEnv
-FROM us.gcr.io/broad-dsp-gcr-public/terra-base:1.0.0
+FROM us.gcr.io/broad-dsp-gcr-public/terra-base:1.0.1
 
 USER root
 
