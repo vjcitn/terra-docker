@@ -30,6 +30,7 @@ apt_install \
     libclang-dev \
     libssl-dev \
     lsb-release \
+    libpq5 \
     psmisc \
     pwgen \
     sudo \
