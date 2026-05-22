@@ -6,20 +6,24 @@ COPY scripts $JUPYTER_HOME/scripts
 
 # Add env vars to identify binary package installation
 ENV TERRA_R_PLATFORM="terra-jupyter-r-2.2.6"
-ENV TERRA_R_PLATFORM_BINARY_VERSION=3.21
+ENV TERRA_R_PLATFORM_BINARY_VERSION=3.23
 
-# Install protobuf 3.20.3. Note this version comes from base deep learning image. Use `conda list` to see what's installed
-RUN cd /tmp \
-  && wget https://github.com/protocolbuffers/protobuf/releases/download/v3.20.3/protobuf-all-3.20.3.tar.gz \
-    && tar -xvzf protobuf-all-3.20.3.tar.gz \
-    && cd protobuf-3.20.3/ \
-    && ./configure --disable-dependency-tracking \
-    && make \
-    && make check \
-    && sudo make install \
-    && sudo ldconfig \
-    && rm -rf /tmp/protobuf-* \
-    && cd ~
+## Install protobuf 3.20.3. Note this version comes from base deep learning image. Use `conda list` to see what's installed
+#RUN cd /tmp \
+#  && wget https://github.com/protocolbuffers/protobuf/releases/download/v3.20.3/protobuf-all-3.20.3.tar.gz \
+#    && tar -xvzf protobuf-all-3.20.3.tar.gz \
+#    && cd protobuf-3.20.3/ \
+#    && ./configure --disable-dependency-tracking \
+#    && make \
+#    && make check \
+#    && sudo make install \
+#    && sudo ldconfig \
+#    && rm -rf /tmp/protobuf-* \
+#    && cd ~
+#
+# THE ABOVE TAKES FOREVER.  USE apt until you know you need the above
+
+RUN apt-get update && apt-get install -y protobuf-compiler libprotobuf-dev
 
 # Add R kernel
 RUN find $JUPYTER_HOME/scripts -name '*.sh' -type f | xargs chmod +x \
@@ -105,6 +109,8 @@ RUN apt-get update \
     cmake \
     ## for archive package
     libarchive-dev \
+    ## for fs
+    libuv1-dev \
     && ln -s /usr/lib/gcc/x86_64-linux-gnu/7/libgfortran.so /usr/lib/x86_64-linux-gnu/libgfortran.so \
     && ln -s /usr/lib/gcc/x86_64-linux-gnu/7/libstdc++.so /usr/lib/x86_64-linux-gnu/libstdc++.so \
     && apt-get clean \
@@ -160,8 +166,9 @@ RUN R -e 'install.packages("BiocManager")' \
     "devtools", \
     "tidyverse", \
     "pbdZMQ", \
-    "uuid"))' \
-    && R -e 'BiocManager::install("DataBiosphere/Ronaldo")'
+    "uuid"))' 
+#\
+#    && R -e 'BiocManager::install("DataBiosphere/Ronaldo")'
 
 # Install Bioconductor packages found at:
 # https://raw.githubusercontent.com/anvilproject/anvil-docker/master/anvil-rstudio-bioconductor/install.R
