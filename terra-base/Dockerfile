@@ -54,6 +54,17 @@ RUN apt-get update && apt-get install -yq --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 ##############################
+# Install NVIDIA driver 550
+##############################
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends software-properties-common \
+    && add-apt-repository -y ppa:graphics-drivers/ppa \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends nvidia-driver-550 nvidia-utils-550 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+##############################
 # Set up Node for Jupyterlab
 ##############################
 RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
@@ -237,6 +248,11 @@ RUN touch /etc/jupyter/.terra-base-marker
 # Make sure that the jupyter user will have access to the jupyter path in the working directory
 EXPOSE $JUPYTER_PORT
 WORKDIR $USER_HOME
+
+##############################
+# Install latest Ollama
+##############################
+RUN curl -fsSL https://ollama.com/install.sh | sh
 
 # make pip install to a user directory, instead of a system directory which requires root.
 # this is useful so `pip install` commands can be run in the context of a notebook.
