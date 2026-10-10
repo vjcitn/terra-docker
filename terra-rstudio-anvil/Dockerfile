@@ -35,7 +35,23 @@ COPY scripts/default_user.sh /rocker_scripts/default_user.sh
 COPY scripts/init_set_env.sh /rocker_scripts/init_set_env.sh
 COPY scripts/init_userconf.sh /rocker_scripts/init_userconf.sh
 
-RUN apt update && apt install zlib1g-dev
+RUN apt update && apt install -y --no-install-recommends zlib1g-dev perl xz-utils
+RUN Rscript -e "install.packages(c('tinytex', 'BiocManager'), repos = 'https://cloud.r-project.org')"
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends perl xz-utils \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN Rscript -e "tinytex::install_tinytex(dir = '/opt/TinyTeX', add_path = FALSE)" \
+ && /opt/TinyTeX/bin/x86_64-linux/tlmgr option sys_bin /usr/local/bin \
+ && /opt/TinyTeX/bin/x86_64-linux/tlmgr path add \
+ && chmod -R a+rwX /opt/TinyTeX
+
+RUN Rscript -e "tinytex::tlmgr_install(c('fancyhdr', 'titlesec', 'enumitem'))"
+
+RUN apt-get update && apt install -y libuv1-dev
+RUN Rscript -e "BiocManager::install(c('GenomicRanges', 'Seqinfo', 'limma', 'DESeq2', 'scater', 'scran', \
+     'SpatialExperiment', 'SpatialFeatureExperiment'))"
 
 RUN /rocker_scripts/install_rstudio.sh
 
